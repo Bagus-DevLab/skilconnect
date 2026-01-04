@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CourseApiController;
 use App\Http\Controllers\AIRecommendationController;
 use App\Http\Controllers\EnrollmentController;
 
+
 // ==============================
 // Health Check
 // ==============================
