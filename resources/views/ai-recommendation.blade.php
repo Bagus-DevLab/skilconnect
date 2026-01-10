@@ -20,7 +20,6 @@
             color: #1a1a1a;
         }
 
-        /* Navigation */
         .navbar {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -72,14 +71,12 @@
             font-weight: 600;
         }
 
-        /* Main Container */
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 3rem 2rem;
         }
 
-        /* Hero Section */
         .hero {
             text-align: center;
             color: white;
@@ -121,7 +118,6 @@
             line-height: 1.6;
         }
 
-        /* Recommendation Cards Grid */
         .rec-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -137,6 +133,7 @@
             transition: all 0.4s ease;
             cursor: pointer;
             position: relative;
+            pointer-events: auto;
         }
 
         .rec-card:hover {
@@ -254,7 +251,6 @@
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -460,7 +456,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Results */
         .results {
             display: none;
             margin-top: 2rem;
@@ -468,6 +463,30 @@
 
         .results.show {
             display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-section {
+            margin-bottom: 2rem;
+        }
+
+        .result-section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .result-section-title i {
+            color: #667eea;
         }
 
         .result-card {
@@ -476,6 +495,12 @@
             padding: 1.5rem;
             margin-bottom: 1rem;
             border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .result-card:hover {
+            background: #edf2f7;
+            transform: translateX(5px);
         }
 
         .result-title {
@@ -490,6 +515,15 @@
             line-height: 1.6;
         }
 
+        .result-content ul {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .result-content li {
+            margin-bottom: 0.5rem;
+        }
+
         .tag {
             display: inline-block;
             background: #667eea;
@@ -501,7 +535,99 @@
             margin: 0.3rem;
         }
 
-        /* Responsive */
+        .skill-item {
+            background: white;
+            padding: 1.2rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .skill-name {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 1.1rem;
+        }
+
+        .priority-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .priority-high {
+            background: #fef5e7;
+            color: #f39c12;
+        }
+
+        .priority-medium {
+            background: #e8f5e9;
+            color: #27ae60;
+        }
+
+        .priority-low {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .course-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .course-title {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 1.15rem;
+            flex: 1;
+        }
+
+        .match-score {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .course-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .meta-item i {
+            color: #667eea;
+        }
+
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.2rem;
@@ -534,30 +660,27 @@
     </style>
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">SkillConnect.id</div>
             <div class="nav-links">
-                <a href="/" id="navBeranda">
+                <a href="/">
                     <i class="fas fa-home"></i> Beranda
                 </a>
-                <a href="/courses" id="navKursus">
+                <a href="/courses">
                     <i class="fas fa-book"></i> Kursus
                 </a>
-                <a href="/ai-recommendation" id="navAI" class="active">
+                <a href="/ai-recommendation" class="active">
                     <i class="fas fa-brain"></i> AI Rekomendasi
                 </a>
-                <a href="/profile" id="navProfile">
+                <a href="/profile">
                     <i class="fas fa-user"></i> Profile
                 </a>
             </div>
         </div>
     </nav>
 
-    <!-- Main Container -->
     <div class="container">
-        <!-- Hero Section -->
         <div class="hero">
             <h1>
                 <span class="ai-icon">
@@ -568,9 +691,7 @@
             <p>Dapatkan rekomendasi yang dipersonalisasi untuk skill, job, dan kursus menggunakan teknologi AI yang canggih</p>
         </div>
 
-        <!-- Recommendation Cards -->
         <div class="rec-grid">
-            <!-- Skill Recommendation -->
             <div class="rec-card" onclick="openModal('skill')">
                 <div class="card-header">
                     <div class="badge">AI Powered</div>
@@ -608,45 +729,6 @@
                 </div>
             </div>
 
-            <!-- Job Recommendation -->
-            <div class="rec-card" onclick="openModal('job')">
-                <div class="card-header">
-                    <div class="badge">AI Powered</div>
-                    <div class="card-icon">
-                        <i class="fas fa-briefcase"></i>
-                    </div>
-                    <div class="card-title">Rekomendasi Job</div>
-                </div>
-                <div class="card-body">
-                    <p class="card-description">
-                        Dapatkan rekomendasi pekerjaan yang sesuai dengan skill, pengalaman, dan preferensi karier Anda
-                    </p>
-                    <div class="card-features">
-                        <div class="feature-item">
-                            <i class="fas fa-user-tie"></i>
-                            <span>Matching berdasarkan skill</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Filter lokasi & industri</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <span>Sesuai ekspektasi gaji</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-star"></i>
-                            <span>Peluang karier terbaik</span>
-                        </div>
-                    </div>
-                    <button class="btn-start">
-                        <i class="fas fa-search"></i>
-                        Cari Job
-                    </button>
-                </div>
-            </div>
-
-            <!-- Course Recommendation -->
             <div class="rec-card" onclick="openModal('course')">
                 <div class="card-header">
                     <div class="badge">AI Powered</div>
@@ -686,7 +768,6 @@
         </div>
     </div>
 
-    <!-- Modal Skill -->
     <div class="modal" id="skillModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -706,7 +787,7 @@
                             <i class="fas fa-briefcase"></i>
                             Posisi atau bidang karier saat ini
                         </label>
-                        <input type="text" class="form-control" placeholder="Contoh: Web Developer, Marketing, Designer" required>
+                        <input type="text" id="skillPosition" class="form-control" placeholder="Contoh: Web Developer, Marketing, Designer" required>
                     </div>
 
                     <div class="form-group">
@@ -744,7 +825,7 @@
                             <i class="fas fa-bullseye"></i>
                             Apa tujuan karier Anda?
                         </label>
-                        <textarea class="form-control" placeholder="Contoh: Ingin menjadi Full Stack Developer, pindah ke bidang Data Science, atau naik jabatan" required></textarea>
+                        <textarea id="skillGoal" class="form-control" placeholder="Contoh: Ingin menjadi Full Stack Developer, pindah ke bidang Data Science, atau naik jabatan" required></textarea>
                     </div>
 
                     <div class="form-group">
@@ -752,10 +833,10 @@
                             <i class="fas fa-cogs"></i>
                             Skill yang sudah Anda kuasai (opsional)
                         </label>
-                        <input type="text" class="form-control" placeholder="Contoh: HTML, CSS, JavaScript, Python">
+                        <input type="text" id="skillCurrent" class="form-control" placeholder="Contoh: HTML, CSS, JavaScript, Python">
                     </div>
 
-                    <button type="submit" class="btn-generate">
+                    <button type="submit" class="btn-generate" id="skillBtn">
                         <i class="fas fa-magic"></i>
                         Generate Rekomendasi Skill
                     </button>
@@ -766,87 +847,6 @@
         </div>
     </div>
 
-    <!-- Modal Job -->
-    <div class="modal" id="jobModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button class="modal-close" onclick="closeModal('job')">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div class="modal-icon">
-                    <i class="fas fa-briefcase"></i>
-                </div>
-                <div class="modal-title">Rekomendasi Job</div>
-                <div class="modal-subtitle">Temukan pekerjaan yang paling cocok dengan profil Anda</div>
-            </div>
-            <div class="modal-body">
-                <form id="jobForm">
-                    <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-user-tie"></i>
-                            Posisi yang Anda cari
-                        </label>
-                        <input type="text" class="form-control" placeholder="Contoh: Frontend Developer, Digital Marketing Manager" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-cogs"></i>
-                            Skill yang Anda miliki
-                        </label>
-                        <textarea class="form-control" placeholder="Contoh: React, Node.js, Git, SEO, Content Writing" required></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-map-marker-alt"></i>
-                            Lokasi atau tipe pekerjaan
-                        </label>
-                        <div class="radio-group">
-                            <div class="radio-option">
-                                <input type="radio" id="job-onsite" name="job-type" value="onsite" required>
-                                <label for="job-onsite">
-                                    <i class="fas fa-building"></i><br>
-                                    On-site
-                                </label>
-                            </div>
-                            <div class="radio-option">
-                                <input type="radio" id="job-remote" name="job-type" value="remote">
-                                <label for="job-remote">
-                                    <i class="fas fa-home"></i><br>
-                                    Remote
-                                </label>
-                            </div>
-                            <div class="radio-option">
-                                <input type="radio" id="job-hybrid" name="job-type" value="hybrid">
-                                <label for="job-hybrid">
-                                    <i class="fas fa-laptop-house"></i><br>
-                                    Hybrid
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-money-bill-wave"></i>
-                            Ekspektasi gaji (per bulan, opsional)
-                        </label>
-                        <input type="number" class="form-control" placeholder="Contoh: 8000000" min="0" step="500000">
-                    </div>
-
-                    <button type="submit" class="btn-generate">
-                        <i class="fas fa-search"></i>
-                        Generate Rekomendasi Job
-                    </button>
-                </form>
-
-                <div class="results" id="jobResults"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Course -->
     <div class="modal" id="courseModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -866,7 +866,7 @@
                             <i class="fas fa-heart"></i>
                             Apa minat atau bidang yang ingin Anda pelajari?
                         </label>
-                        <input type="text" class="form-control" placeholder="Contoh: Web Development, Digital Marketing, Data Science" required>
+                        <input type="text" id="courseInterest" class="form-control" placeholder="Contoh: Web Development, Digital Marketing, Data Science" required>
                     </div>
 
                     <div class="form-group">
@@ -893,3 +893,444 @@
                                 <input type="radio" id="course-advanced" name="course-level" value="advanced">
                                 <label for="course-advanced">
                                     <i class="fas fa-crown"></i><br>
+                                    Lanjutan
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-bullseye"></i>
+                            Apa tujuan pembelajaran Anda?
+                        </label>
+                        <textarea id="coursePurpose" class="form-control" placeholder="Contoh: Mendapat sertifikasi, switch career, upgrade skill untuk promosi" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-clock"></i>
+                            Waktu belajar yang tersedia per minggu
+                        </label>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" id="time-low" name="time" value="<5 jam" required>
+                                <label for="time-low">
+                                    <i class="fas fa-hourglass-start"></i><br>
+                                    < 5 jam
+                                </label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="time-medium" name="time" value="5-10 jam">
+                                <label for="time-medium">
+                                    <i class="fas fa-hourglass-half"></i><br>
+                                    5-10 jam
+                                </label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="time-high" name="time" value=">10 jam">
+                                <label for="time-high">
+                                    <i class="fas fa-hourglass-end"></i><br>
+                                    > 10 jam
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-generate" id="courseBtn">
+                        <i class="fas fa-magic"></i>
+                        Generate Rekomendasi Kursus
+                    </button>
+                </form>
+
+                <div class="results" id="courseResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global functions untuk onclick
+        window.openModal = function(type) {
+            const modal = document.getElementById(type + 'Modal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        window.closeModal = function(type) {
+            const modal = document.getElementById(type + 'Modal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+                
+                const form = document.getElementById(type + 'Form');
+                const results = document.getElementById(type + 'Results');
+                if (form) form.reset();
+                if (results) {
+                    results.classList.remove('show');
+                    results.innerHTML = '';
+                }
+            }
+        }
+
+        async function generateSkillRecommendations(formData) {
+            const prompt = `Kamu adalah AI Career Advisor untuk platform SkillConnect.id. Berikan rekomendasi skill yang sangat spesifik dan actionable untuk profil berikut:
+
+Posisi/Bidang: ${formData.position}
+Level: ${formData.level}
+Tujuan Karier: ${formData.goal}
+Skill Saat Ini: ${formData.currentSkills || 'Belum ada'}
+
+Berikan rekomendasi dalam format JSON dengan struktur berikut:
+{
+  "summary": "ringkasan singkat analisis (2-3 kalimat)",
+  "skillGaps": ["skill gap 1", "skill gap 2", ...],
+  "recommendations": [
+    {
+      "skill": "nama skill",
+      "priority": "high/medium/low",
+      "reason": "alasan kenapa skill ini penting",
+      "learningPath": "langkah-langkah untuk mempelajarinya",
+      "timeframe": "estimasi waktu untuk menguasai"
+    }
+  ],
+  "industryTrends": ["trend 1", "trend 2", ...],
+  "nextSteps": ["langkah konkrit 1", "langkah konkrit 2", ...]
+}
+
+Pastikan rekomendasi relevan dengan konteks Indonesia, disesuaikan dengan tren industri 2025, dan mudah dipahami oleh fresh graduate atau mahasiswa.`;
+
+            try {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [{
+                            role: "user",
+                            content: prompt
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.content.find(c => c.type === 'text')?.text || '';
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                }
+                
+                throw new Error('Format respons tidak valid');
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        async function generateCourseRecommendations(formData) {
+            const prompt = `Kamu adalah AI Course Recommendation Engine untuk platform SkillConnect.id. Berikan rekomendasi kursus yang sangat spesifik untuk profil berikut:
+
+Minat/Bidang: ${formData.interest}
+Level: ${formData.level}
+Tujuan: ${formData.purpose}
+Waktu Tersedia: ${formData.time}
+
+Berikan rekomendasi dalam format JSON dengan struktur berikut:
+{
+  "summary": "ringkasan singkat mengapa kursus ini cocok (2-3 kalimat)",
+  "courses": [
+    {
+      "title": "judul kursus",
+      "platform": "nama platform (Coursera, Udemy, dll)",
+      "level": "Beginner/Intermediate/Advanced",
+      "duration": "durasi dalam jam/minggu",
+      "matchScore": 95,
+      "keyTopics": ["topik 1", "topik 2", "topik 3"],
+      "whyRecommended": "alasan kenapa kursus ini cocok",
+      "estimatedPrice": "harga estimasi dalam IDR"
+    }
+  ],
+  "learningPath": "saran urutan pembelajaran",
+  "tips": ["tips 1", "tips 2", ...]
+}
+
+Rekomendasikan 4-5 kursus dari berbagai platform (Coursera, Udemy, Dicoding, BuildWithAngga, dll). Pastikan ada variasi dari gratis hingga berbayar, dan disesuaikan dengan konteks Indonesia.`;
+
+            try {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [{
+                            role: "user",
+                            content: prompt
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.content.find(c => c.type === 'text')?.text || '';
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                }
+                
+                throw new Error('Format respons tidak valid');
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        function displaySkillResults(data) {
+            const resultsDiv = document.getElementById('skillResults');
+            
+            let html = `
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Analisis Profil Anda
+                    </div>
+                    <div class="result-card">
+                        <p class="result-content">${data.summary}</p>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Skill Gaps yang Perlu Diperbaiki
+                    </div>
+                    <div class="result-card">
+                        <div class="result-content">
+                            ${data.skillGaps.map(gap => `<span class="tag">${gap}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-star"></i>
+                        Rekomendasi Skill Prioritas
+                    </div>
+                    ${data.recommendations.map(rec => `
+                        <div class="skill-item">
+                            <div class="skill-header">
+                                <div class="skill-name">${rec.skill}</div>
+                                <div class="priority-badge priority-${rec.priority}">${rec.priority.toUpperCase()}</div>
+                            </div>
+                            <div class="result-content">
+                                <p><strong>Kenapa Penting:</strong> ${rec.reason}</p>
+                                <p><strong>Cara Belajar:</strong> ${rec.learningPath}</p>
+                                <p><strong>Estimasi Waktu:</strong> ${rec.timeframe}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-chart-line"></i>
+                        Tren Industri Terkini
+                    </div>
+                    <div class="result-card">
+                        <ul class="result-content">
+                            ${data.industryTrends.map(trend => `<li>${trend}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-footsteps"></i>
+                        Langkah Selanjutnya
+                    </div>
+                    <div class="result-card">
+                        <ol class="result-content">
+                            ${data.nextSteps.map(step => `<li>${step}</li>`).join('')}
+                        </ol>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.classList.add('show');
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function displayCourseResults(data) {
+            const resultsDiv = document.getElementById('courseResults');
+            
+            let html = `
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Ringkasan Rekomendasi
+                    </div>
+                    <div class="result-card">
+                        <p class="result-content">${data.summary}</p>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-graduation-cap"></i>
+                        Kursus yang Direkomendasikan
+                    </div>
+                    ${data.courses.map(course => `
+                        <div class="course-item">
+                            <div class="course-header">
+                                <div class="course-title">${course.title}</div>
+                                <div class="match-score">${course.matchScore}% Match</div>
+                            </div>
+                            <div class="course-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-building"></i>
+                                    ${course.platform}
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-signal"></i>
+                                    ${course.level}
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    ${course.duration}
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-tag"></i>
+                                    ${course.estimatedPrice}
+                                </div>
+                            </div>
+                            <div class="result-content" style="margin-top: 1rem;">
+                                <p><strong>Topik yang Dipelajari:</strong></p>
+                                ${course.keyTopics.map(topic => `<span class="tag">${topic}</span>`).join('')}
+                                <p style="margin-top: 1rem;"><strong>Kenapa Direkomendasikan:</strong> ${course.whyRecommended}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-route"></i>
+                        Learning Path yang Disarankan
+                    </div>
+                    <div class="result-card">
+                        <p class="result-content">${data.learningPath}</p>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <i class="fas fa-lightbulb"></i>
+                        Tips Pembelajaran
+                    </div>
+                    <div class="result-card">
+                        <ul class="result-content">
+                            ${data.tips.map(tip => `<li>${tip}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.classList.add('show');
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        document.getElementById('skillForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('skillBtn');
+            const resultsDiv = document.getElementById('skillResults');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Menganalisis...';
+            resultsDiv.classList.remove('show');
+            resultsDiv.innerHTML = '';
+            
+            const formData = {
+                position: document.getElementById('skillPosition').value,
+                level: document.querySelector('input[name="skill-level"]:checked').value,
+                goal: document.getElementById('skillGoal').value,
+                currentSkills: document.getElementById('skillCurrent').value
+            };
+            
+            const results = await generateSkillRecommendations(formData);
+            
+            if (results) {
+                displaySkillResults(results);
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="result-card" style="border-left-color: #e53e3e;">
+                        <p class="result-content" style="color: #e53e3e;">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            Maaf, terjadi kesalahan saat menghasilkan rekomendasi. Silakan coba lagi.
+                        </p>
+                    </div>
+                `;
+                resultsDiv.classList.add('show');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> Generate Rekomendasi Skill';
+        });
+
+        document.getElementById('courseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('courseBtn');
+            const resultsDiv = document.getElementById('courseResults');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Mencari kursus terbaik...';
+            resultsDiv.classList.remove('show');
+            resultsDiv.innerHTML = '';
+            
+            const formData = {
+                interest: document.getElementById('courseInterest').value,
+                level: document.querySelector('input[name="course-level"]:checked').value,
+                purpose: document.getElementById('coursePurpose').value,
+                time: document.querySelector('input[name="time"]:checked').value
+            };
+            
+            const results = await generateCourseRecommendations(formData);
+            
+            if (results) {
+                displayCourseResults(results);
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="result-card" style="border-left-color: #e53e3e;">
+                        <p class="result-content" style="color: #e53e3e;">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            Maaf, terjadi kesalahan saat menghasilkan rekomendasi. Silakan coba lagi.
+                        </p>
+                    </div>
+                `;
+                resultsDiv.classList.add('show');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> Generate Rekomendasi Kursus';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                const modalId = e.target.id;
+                const type = modalId.replace('Modal', '');
+                closeModal(type);
+            }
+        });
+    </script>
+</body>
+</html>

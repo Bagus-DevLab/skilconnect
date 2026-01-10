@@ -9,16 +9,13 @@ use Illuminate\Support\Facades\Validator;
 
 class CourseApiController extends Controller
 {
-    /**
-     * GET /api/courses
-     * Get all courses
-     */
+    // ===============================
+    // GET /api/courses
+    // ===============================
     public function index()
     {
         try {
-            $courses = Course::where('is_active', true)
-                ->orderBy('created_at', 'desc')
-                ->get();
+            $courses = Course::orderBy('created_at', 'desc')->get();
 
             return response()->json([
                 'success' => true,
@@ -35,159 +32,105 @@ class CourseApiController extends Controller
         }
     }
 
-    /**
-     * GET /api/courses/{id}
-     * Get single course
-     */
+    // ===============================
+    // GET /api/courses/{id}
+    // ===============================
     public function show($id)
     {
-        try {
-            $course = Course::find($id);
+        $course = Course::find($id);
 
-            if (!$course) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Course tidak ditemukan'
-                ], 404);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Detail course',
-                'data' => $course
-            ], 200);
-
-        } catch (\Exception $e) {
+        if (!$course) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data course',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Course tidak ditemukan'
+            ], 404);
         }
+
+        return response()->json([
+            'success' => true,
+            'data' => $course
+        ]);
     }
 
-    /**
-     * POST /api/courses
-     * Create new course (Admin)
-     */
+    // ===============================
+    // POST /api/courses (ADMIN)
+    // ===============================
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|string|max:100',
-            'icon' => 'required|string|max:100',
-            'duration_weeks' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-            'is_active' => 'boolean'
+            'title' => 'required|string',
+            'category' => 'required|string',
+            'duration' => 'required|integer',
+            'participants' => 'required|integer',
+            'price' => 'required|numeric',
+            'icon_class' => 'required|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        try {
-            $course = Course::create($request->all());
+        $course = Course::create($request->all());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Course berhasil dibuat',
-                'data' => $course
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membuat course',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Course berhasil dibuat',
+            'data' => $course
+        ], 201);
     }
 
-    /**
-     * PUT /api/courses/{id}
-     * Update course (Admin)
-     */
+    // ===============================
+    // PUT /api/courses/{id}
+    // ===============================
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'string|max:255',
-            'description' => 'string',
-            'category' => 'string|max:100',
-            'icon' => 'string|max:100',
-            'duration_weeks' => 'integer|min:1',
-            'price' => 'numeric|min:0',
-            'is_active' => 'boolean'
+        $course = Course::find($id);
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Course tidak ditemukan'
+            ], 404);
+        }
+
+        $course->update($request->only([
+            'title',
+            'category',
+            'duration',
+            'participants',
+            'price',
+            'icon_class'
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Course berhasil diupdate',
+            'data' => $course
         ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $course = Course::find($id);
-
-            if (!$course) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Course tidak ditemukan'
-                ], 404);
-            }
-
-            $course->update($request->all());
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Course berhasil diupdate',
-                'data' => $course
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal update course',
-                'error' => $e->getMessage()
-            ], 500);
-        }
     }
 
-    /**
-     * DELETE /api/courses/{id}
-     * Delete course (Admin)
-     */
+    // ===============================
+    // DELETE /api/courses/{id}
+    // ===============================
     public function destroy($id)
     {
-        try {
-            $course = Course::find($id);
+        $course = Course::find($id);
 
-            if (!$course) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Course tidak ditemukan'
-                ], 404);
-            }
-
-            $course->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Course berhasil dihapus'
-            ], 200);
-
-        } catch (\Exception $e) {
+        if (!$course) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus course',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Course tidak ditemukan'
+            ], 404);
         }
+
+        $course->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Course berhasil dihapus'
+        ]);
     }
 }
