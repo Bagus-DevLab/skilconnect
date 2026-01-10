@@ -1,193 +1,141 @@
-<!-- halo wok -->
-
 <?php
 
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
-class AIRecommendationController extends Controller
+class AiRecommendationController extends Controller
 {
-    /**
-     * Recommend Skills
-     */
-    public function recommendSkills(Request $request)
+    private function callLocalPythonAi($prompt)
     {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
-            'position' => 'required|string|max:255',
-            'level' => 'required|in:beginner,intermediate,advanced',
-            'goal' => 'required|string',
-            'current_skills' => 'nullable|string',
-        ]);
+        // URL ke Python FastAPI (Port 8001)
+        $url = "https://lfmafic-production.up.railway.app/generate";
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
+        try {
+            // PERBAIKAN 1: Tambahkan timeout()
+            // Kita set 300 detik (5 menit) agar tidak error saat CPU lambat
+            $response = Http::timeout(300) 
+                ->connectTimeout(300) // Waktu tunggu koneksi
+                ->post($url, [
+                    'prompt' => $prompt,
+                    // PERBAIKAN 2: Kurangi max_tokens
+                    // 1200 terlalu banyak dan bikin lama. 600 cukup untuk JSON rekomendasi.
+                    'max_tokens' => 600 
+                ]);
+
+            if ($response->failed()) {
+                Log::error('Python AI Error: ' . $response->body());
+                throw new \Exception('Gagal menghubungi Server AI Lokal (Pastikan main.py sudah dijalankan).');
+            }
+
+            return $response->json();
+
+        } catch (\Exception $e) {
+            Log::error('Controller Error: ' . $e->getMessage());
+            
+            // Pesan error khusus jika timeout
+            if (str_contains($e->getMessage(), 'timed out')) {
+                throw new \Exception('AI terlalu lama merespon (Timeout). Laptop sedang bekerja keras, coba kurangi panjang permintaan.');
+            }
+            
+            if (str_contains($e->getMessage(), 'Connection refused')) {
+                throw new \Exception('Server AI (Python) belum dinyalakan. Jalankan "python main.py" dulu.');
+            }
+            throw $e;
         }
-
-        // TODO: Integrate dengan AI API (Claude/OpenAI)
-        // Untuk sekarang return dummy data
-        
-        $skills = ['React.js', 'TypeScript', 'Node.js', 'Docker', 'AWS'];
-        $learningPath = [
-            'Kuasai JavaScript ES6+ fundamental',
-            'Pelajari React.js dan component lifecycle',
-            'Dalami TypeScript untuk type safety',
-            'Backend development dengan Node.js & Express',
-            'DevOps basics dengan Docker dan deployment'
-        ];
-
-        return response()->json([
-            'success' => true,
-            'skills' => $skills,
-            'learning_path' => $learningPath,
-            'user_input' => [
-                'position' => $request->position,
-                'level' => $request->level,
-                'goal' => $request->goal,
-            ]
-        ]);
     }
 
-    /**
-     * Recommend Jobs
-     */
-    public function recommendJobs(Request $request)
+    public function recommendSkill(Request $request)
     {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
-            'position' => 'required|string|max:255',
-            'skills' => 'required|string',
-            'job_type' => 'required|in:onsite,remote,hybrid',
-            'salary_expectation' => 'nullable|numeric|min:0',
-        ]);
+        try {
+            $data = $request->validate([
+                'position' => 'required', 'level' => 'required', 
+                'goal' => 'required', 'currentSkills' => 'nullable'
+            ]);
+            
+            $prompt = "Role: Senior Tech Recruiter Indonesia.
+            Task: Analyze candidate profile for modern tech role.
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
+            Candidate Profile:
+            - Role: {$data['position']}
+            - Level: {$data['level']}
+            - Goal: {$data['goal']}
+            - Skills: {$data['currentSkills']}
+
+            IMPORTANT RULES:
+            1. Use FORMAL INDONESIAN (Bahasa Indonesia Baku). Do NOT use Malay words like 'pentadbiran' or 'kerajaan'.
+            2. Focus on modern tech (2025).
+            3. Output VALID JSON ONLY.
+
+            JSON Structure:
+            {
+            \"summary\": \"Tulis analisis profesional 2 kalimat dalam Bahasa Indonesia Baku\",
+            \"skillGaps\": [\"Sebutkan 3 skill teknis modern\"],
+            \"recommendations\": [
+                {
+                \"skill\": \"Nama Skill Utama\",
+                \"priority\": \"High\",
+                \"reason\": \"Alasan dalam Bahasa Indonesia\",
+                \"learningPath\": \"Langkah belajar konkrit\",
+                \"timeframe\": \"Estimasi waktu (minggu/bulan)\"
+                }
+            ],
+            \"industryTrends\": [\"Tren teknologi 1\", \"Tren teknologi 2\"],
+            \"nextSteps\": [\"Langkah pertama yang harus dilakukan\"]
+            }";
+            
+            return response()->json($this->callLocalPythonAi($prompt));
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
         }
-
-        // TODO: Integrate dengan AI API dan Job Database
-        // Untuk sekarang return dummy data
-        
-        $jobs = [
-            [
-                'id' => 1,
-                'title' => 'Frontend Developer',
-                'company' => 'Tokopedia',
-                'match_score' => 95,
-                'salary_min' => 12000000,
-                'salary_max' => 18000000,
-                'type' => 'Full-time',
-                'work_arrangement' => 'Remote',
-                'location' => 'Jakarta',
-            ],
-            [
-                'id' => 2,
-                'title' => 'React Developer',
-                'company' => 'Gojek',
-                'match_score' => 92,
-                'salary_min' => 15000000,
-                'salary_max' => 22000000,
-                'type' => 'Full-time',
-                'work_arrangement' => 'Hybrid',
-                'location' => 'Jakarta',
-            ],
-            [
-                'id' => 3,
-                'title' => 'Full Stack Developer',
-                'company' => 'Bukalapak',
-                'match_score' => 88,
-                'salary_min' => 13000000,
-                'salary_max' => 20000000,
-                'type' => 'Full-time',
-                'work_arrangement' => 'On-site',
-                'location' => 'Jakarta',
-            ]
-        ];
-
-        return response()->json([
-            'success' => true,
-            'jobs' => $jobs,
-            'total' => count($jobs)
-        ]);
     }
 
-    /**
-     * Recommend Courses
-     */
-    public function recommendCourses(Request $request)
+    public function recommendCourse(Request $request)
     {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
-            'interest' => 'required|string|max:255',
-            'level' => 'required|in:beginner,intermediate,advanced',
-            'goal' => 'required|string',
-            'budget' => 'nullable|numeric|min:0',
-        ]);
+        try {
+            $data = $request->validate([
+                'interest' => 'required', 'level' => 'required', 
+                'purpose' => 'required', 'time' => 'required'
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
+            $prompt = "Role: Education Consultant Indonesia.
+            Task: Recommend online courses.
+
+            User Profile:
+            - Interest: {$data['interest']}
+            - Level: {$data['level']}
+            - Goal: {$data['purpose']}
+            - Time: {$data['time']}
+
+            IMPORTANT RULES:
+            1. Use FORMAL INDONESIAN (Bahasa Indonesia Baku).
+            2. Recommend real platforms (Udemy, Coursera, Dicoding, BuildWithAngga).
+            3. Output VALID JSON ONLY.
+
+            JSON Structure:
+            {
+            \"summary\": \"Saran penyemangat dalam Bahasa Indonesia Baku\",
+            \"courses\": [
+                {
+                \"title\": \"Nama Kursus Spesifik\",
+                \"platform\": \"Nama Platform\",
+                \"level\": \"{$data['level']}\",
+                \"duration\": \"Estimasi durasi\",
+                \"matchScore\": 95,
+                \"keyTopics\": [\"Topik 1\", \"Topik 2\"],
+                \"whyRecommended\": \"Alasan rekomendasi dalam Bahasa Indonesia\",
+                \"estimatedPrice\": \"Gratis / Berbayar\"
+                }
+            ],
+            \"learningPath\": \"Urutan belajar\",
+            \"tips\": [\"Tips belajar 1\"]
+            }";
+
+            return response()->json($this->callLocalPythonAi($prompt));
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
         }
-
-        // TODO: Integrate dengan AI API dan Course Database
-        // Untuk sekarang return dummy data
-        
-        $courses = [
-            [
-                'id' => 1,
-                'title' => 'The Complete Web Developer Bootcamp',
-                'platform' => 'Udemy',
-                'duration_weeks' => 12,
-                'price' => 299000,
-                'match_score' => 96,
-                'skills' => ['HTML', 'CSS', 'JavaScript', 'React', 'Node.js'],
-                'instructor' => 'Angela Yu',
-                'rating' => 4.7,
-                'students' => 125000
-            ],
-            [
-                'id' => 2,
-                'title' => 'Modern React with Redux',
-                'platform' => 'Udemy',
-                'duration_weeks' => 8,
-                'price' => 349000,
-                'match_score' => 94,
-                'skills' => ['React', 'Redux', 'Hooks', 'Context API'],
-                'instructor' => 'Stephen Grider',
-                'rating' => 4.6,
-                'students' => 89000
-            ],
-            [
-                'id' => 3,
-                'title' => 'Advanced JavaScript Concepts',
-                'platform' => 'Udemy',
-                'duration_weeks' => 6,
-                'price' => 279000,
-                'match_score' => 91,
-                'skills' => ['ES6+', 'Async/Await', 'OOP', 'Functional Programming'],
-                'instructor' => 'Andrei Neagoie',
-                'rating' => 4.8,
-                'students' => 67000
-            ]
-        ];
-
-        return response()->json([
-            'success' => true,
-            'courses' => $courses,
-            'total' => count($courses)
-        ]);
     }
 }

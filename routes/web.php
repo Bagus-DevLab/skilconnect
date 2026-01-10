@@ -37,12 +37,14 @@ Route::post('/contact', [ContactController::class, 'submit'])->name('contact.sub
 // =======================
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 
-// =======================
-// AI Recommendation Page (Halaman AI Recommendation Hub)
-// =======================
+
 Route::get('/ai-recommendation', function () {
-    return view('ai-recommendation');
+    return view('ai-recommendation'); // Sesuaikan nama file blade Anda
 })->name('ai.recommendation');
+
+// Proses AI (Method POST)
+Route::post('/ai/analyze-skill', [AiRecommendationController::class, 'recommendSkill'])->name('ai.skill');
+Route::post('/ai/analyze-course', [AiRecommendationController::class, 'recommendCourse'])->name('ai.course');
 
 // =======================
 // AI RECOMMENDATION API ROUTES (Public - bisa diakses tanpa login)
@@ -154,3 +156,6 @@ Route::prefix('admin')->middleware(['auth'])->name('admin.')->group(function () 
     // Tolak pembayaran (Reject)
     Route::post('/payment/reject/{enrollmentId}', [PaymentController::class, 'rejectPayment'])->name('payment.reject');
 });
+
+// Route untuk cek model yang tersedia (Hanya untuk debugging)
+Route::get('/cek-model', [App\Http\Controllers\AiRecommendationController::class, 'checkModels']);

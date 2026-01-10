@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Recommendation Hub - SkillConnect.id</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -949,388 +950,231 @@
     </div>
 
     <script>
-        // Global functions untuk onclick
-        window.openModal = function(type) {
-            const modal = document.getElementById(type + 'Modal');
-            if (modal) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
+    // --- 1. SETUP & HELPER FUNCTIONS ---
+
+    // Fungsi untuk membuka Modal
+    window.openModal = function(type) {
+        const modal = document.getElementById(type + 'Modal');
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
-
-        window.closeModal = function(type) {
-            const modal = document.getElementById(type + 'Modal');
-            if (modal) {
-                modal.classList.remove('active');
-                document.body.style.overflow = 'auto';
-                
-                const form = document.getElementById(type + 'Form');
-                const results = document.getElementById(type + 'Results');
-                if (form) form.reset();
-                if (results) {
-                    results.classList.remove('show');
-                    results.innerHTML = '';
-                }
-            }
-        }
-
-        async function generateSkillRecommendations(formData) {
-            const prompt = `Kamu adalah AI Career Advisor untuk platform SkillConnect.id. Berikan rekomendasi skill yang sangat spesifik dan actionable untuk profil berikut:
-
-Posisi/Bidang: ${formData.position}
-Level: ${formData.level}
-Tujuan Karier: ${formData.goal}
-Skill Saat Ini: ${formData.currentSkills || 'Belum ada'}
-
-Berikan rekomendasi dalam format JSON dengan struktur berikut:
-{
-  "summary": "ringkasan singkat analisis (2-3 kalimat)",
-  "skillGaps": ["skill gap 1", "skill gap 2", ...],
-  "recommendations": [
-    {
-      "skill": "nama skill",
-      "priority": "high/medium/low",
-      "reason": "alasan kenapa skill ini penting",
-      "learningPath": "langkah-langkah untuk mempelajarinya",
-      "timeframe": "estimasi waktu untuk menguasai"
     }
-  ],
-  "industryTrends": ["trend 1", "trend 2", ...],
-  "nextSteps": ["langkah konkrit 1", "langkah konkrit 2", ...]
-}
 
-Pastikan rekomendasi relevan dengan konteks Indonesia, disesuaikan dengan tren industri 2025, dan mudah dipahami oleh fresh graduate atau mahasiswa.`;
+    // Fungsi untuk menutup Modal
+    window.closeModal = function(type) {
+        const modal = document.getElementById(type + 'Modal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
 
-            try {
-                const response = await fetch("https://api.anthropic.com/v1/messages", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        model: "claude-sonnet-4-20250514",
-                        max_tokens: 1000,
-                        messages: [{
-                            role: "user",
-                            content: prompt
-                        }]
-                    })
-                });
-
-                const data = await response.json();
-                const text = data.content.find(c => c.type === 'text')?.text || '';
-                const jsonMatch = text.match(/\{[\s\S]*\}/);
-                
-                if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]);
-                }
-                
-                throw new Error('Format respons tidak valid');
-            } catch (error) {
-                console.error('Error:', error);
-                return null;
+            const form = document.getElementById(type + 'Form');
+            const results = document.getElementById(type + 'Results');
+            if (form) form.reset();
+            if (results) {
+                results.classList.remove('show');
+                results.innerHTML = '';
             }
         }
-
-        async function generateCourseRecommendations(formData) {
-            const prompt = `Kamu adalah AI Course Recommendation Engine untuk platform SkillConnect.id. Berikan rekomendasi kursus yang sangat spesifik untuk profil berikut:
-
-Minat/Bidang: ${formData.interest}
-Level: ${formData.level}
-Tujuan: ${formData.purpose}
-Waktu Tersedia: ${formData.time}
-
-Berikan rekomendasi dalam format JSON dengan struktur berikut:
-{
-  "summary": "ringkasan singkat mengapa kursus ini cocok (2-3 kalimat)",
-  "courses": [
-    {
-      "title": "judul kursus",
-      "platform": "nama platform (Coursera, Udemy, dll)",
-      "level": "Beginner/Intermediate/Advanced",
-      "duration": "durasi dalam jam/minggu",
-      "matchScore": 95,
-      "keyTopics": ["topik 1", "topik 2", "topik 3"],
-      "whyRecommended": "alasan kenapa kursus ini cocok",
-      "estimatedPrice": "harga estimasi dalam IDR"
     }
-  ],
-  "learningPath": "saran urutan pembelajaran",
-  "tips": ["tips 1", "tips 2", ...]
-}
 
-Rekomendasikan 4-5 kursus dari berbagai platform (Coursera, Udemy, Dicoding, BuildWithAngga, dll). Pastikan ada variasi dari gratis hingga berbayar, dan disesuaikan dengan konteks Indonesia.`;
+    // Tutup modal jika klik di luar area konten
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            const modalId = e.target.id;
+            const type = modalId.replace('Modal', '');
+            closeModal(type);
+        }
+    });
 
-            try {
-                const response = await fetch("https://api.anthropic.com/v1/messages", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        model: "claude-sonnet-4-20250514",
-                        max_tokens: 1000,
-                        messages: [{
-                            role: "user",
-                            content: prompt
-                        }]
-                    })
-                });
+    // Helper untuk menampilkan Error di UI
+    function showError(container, message) {
+        container.innerHTML = `
+            <div class="result-card" style="border-left-color: #e53e3e; background: #fff5f5; padding: 1rem;">
+                <p class="result-content" style="color: #e53e3e;">
+                    <i class="fas fa-exclamation-circle"></i> 
+                    ${message || 'Maaf, terjadi kesalahan pada server. Coba lagi nanti.'}
+                </p>
+            </div>
+        `;
+        container.classList.add('show');
+    }
 
-                const data = await response.json();
-                const text = data.content.find(c => c.type === 'text')?.text || '';
-                const jsonMatch = text.match(/\{[\s\S]*\}/);
-                
-                if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]);
-                }
-                
-                throw new Error('Format respons tidak valid');
-            } catch (error) {
-                console.error('Error:', error);
-                return null;
+    // --- 2. CORE LOGIC: PANGGIL LARAVEL ---
+
+    async function callLaravelAi(url, data) {
+        // Ambil CSRF Token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken) {
+            alert("Error: CSRF Token tidak ditemukan. Pastikan <meta name='csrf-token' ...> ada di <head>.");
+            return null;
+        }
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrfToken.getAttribute('content'),
+                    "Accept": "application/json" // Agar Laravel mengembalikan JSON saat error
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                // Jika server 500 atau 400, lempar error dengan pesan dari server
+                throw new Error(result.message || result.error || 'Terjadi kesalahan server');
             }
+
+            return result;
+        } catch (error) {
+            console.error('Error Detail:', error);
+            throw error; // Lempar ke handler di bawah
         }
+    }
 
-        function displaySkillResults(data) {
-            const resultsDiv = document.getElementById('skillResults');
-            
-            let html = `
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-chart-pie"></i>
-                        Analisis Profil Anda
-                    </div>
-                    <div class="result-card">
-                        <p class="result-content">${data.summary}</p>
-                    </div>
-                </div>
+    // --- 3. EVENT LISTENERS ---
 
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Skill Gaps yang Perlu Diperbaiki
-                    </div>
-                    <div class="result-card">
-                        <div class="result-content">
-                            ${data.skillGaps.map(gap => `<span class="tag">${gap}</span>`).join('')}
-                        </div>
-                    </div>
-                </div>
+    // Handler Form Skill
+    document.getElementById('skillForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-star"></i>
-                        Rekomendasi Skill Prioritas
-                    </div>
-                    ${data.recommendations.map(rec => `
-                        <div class="skill-item">
-                            <div class="skill-header">
-                                <div class="skill-name">${rec.skill}</div>
-                                <div class="priority-badge priority-${rec.priority}">${rec.priority.toUpperCase()}</div>
-                            </div>
-                            <div class="result-content">
-                                <p><strong>Kenapa Penting:</strong> ${rec.reason}</p>
-                                <p><strong>Cara Belajar:</strong> ${rec.learningPath}</p>
-                                <p><strong>Estimasi Waktu:</strong> ${rec.timeframe}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+        const btn = document.getElementById('skillBtn');
+        const resultsDiv = document.getElementById('skillResults');
 
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-chart-line"></i>
-                        Tren Industri Terkini
-                    </div>
-                    <div class="result-card">
-                        <ul class="result-content">
-                            ${data.industryTrends.map(trend => `<li>${trend}</li>`).join('')}
-                        </ul>
-                    </div>
-                </div>
+        // Loading UI
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner"></div> Menganalisis...';
+        resultsDiv.classList.remove('show');
+        resultsDiv.innerHTML = '';
 
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-footsteps"></i>
-                        Langkah Selanjutnya
-                    </div>
-                    <div class="result-card">
-                        <ol class="result-content">
-                            ${data.nextSteps.map(step => `<li>${step}</li>`).join('')}
-                        </ol>
-                    </div>
-                </div>
-            `;
-            
-            resultsDiv.innerHTML = html;
-            resultsDiv.classList.add('show');
-            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+        const formData = {
+            position: document.getElementById('skillPosition').value,
+            level: document.querySelector('input[name="skill-level"]:checked').value,
+            goal: document.getElementById('skillGoal').value,
+            currentSkills: document.getElementById('skillCurrent').value
+        };
 
-        function displayCourseResults(data) {
-            const resultsDiv = document.getElementById('courseResults');
-            
-            let html = `
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-info-circle"></i>
-                        Ringkasan Rekomendasi
-                    </div>
-                    <div class="result-card">
-                        <p class="result-content">${data.summary}</p>
-                    </div>
-                </div>
-
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-graduation-cap"></i>
-                        Kursus yang Direkomendasikan
-                    </div>
-                    ${data.courses.map(course => `
-                        <div class="course-item">
-                            <div class="course-header">
-                                <div class="course-title">${course.title}</div>
-                                <div class="match-score">${course.matchScore}% Match</div>
-                            </div>
-                            <div class="course-meta">
-                                <div class="meta-item">
-                                    <i class="fas fa-building"></i>
-                                    ${course.platform}
-                                </div>
-                                <div class="meta-item">
-                                    <i class="fas fa-signal"></i>
-                                    ${course.level}
-                                </div>
-                                <div class="meta-item">
-                                    <i class="fas fa-clock"></i>
-                                    ${course.duration}
-                                </div>
-                                <div class="meta-item">
-                                    <i class="fas fa-tag"></i>
-                                    ${course.estimatedPrice}
-                                </div>
-                            </div>
-                            <div class="result-content" style="margin-top: 1rem;">
-                                <p><strong>Topik yang Dipelajari:</strong></p>
-                                ${course.keyTopics.map(topic => `<span class="tag">${topic}</span>`).join('')}
-                                <p style="margin-top: 1rem;"><strong>Kenapa Direkomendasikan:</strong> ${course.whyRecommended}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-route"></i>
-                        Learning Path yang Disarankan
-                    </div>
-                    <div class="result-card">
-                        <p class="result-content">${data.learningPath}</p>
-                    </div>
-                </div>
-
-                <div class="result-section">
-                    <div class="result-section-title">
-                        <i class="fas fa-lightbulb"></i>
-                        Tips Pembelajaran
-                    </div>
-                    <div class="result-card">
-                        <ul class="result-content">
-                            ${data.tips.map(tip => `<li>${tip}</li>`).join('')}
-                        </ul>
-                    </div>
-                </div>
-            `;
-            
-            resultsDiv.innerHTML = html;
-            resultsDiv.classList.add('show');
-            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        document.getElementById('skillForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const btn = document.getElementById('skillBtn');
-            const resultsDiv = document.getElementById('skillResults');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<div class="spinner"></div> Menganalisis...';
-            resultsDiv.classList.remove('show');
-            resultsDiv.innerHTML = '';
-            
-            const formData = {
-                position: document.getElementById('skillPosition').value,
-                level: document.querySelector('input[name="skill-level"]:checked').value,
-                goal: document.getElementById('skillGoal').value,
-                currentSkills: document.getElementById('skillCurrent').value
-            };
-            
-            const results = await generateSkillRecommendations(formData);
-            
+        try {
+            const results = await callLaravelAi('/ai/analyze-skill', formData);
             if (results) {
                 displaySkillResults(results);
-            } else {
-                resultsDiv.innerHTML = `
-                    <div class="result-card" style="border-left-color: #e53e3e;">
-                        <p class="result-content" style="color: #e53e3e;">
-                            <i class="fas fa-exclamation-circle"></i> 
-                            Maaf, terjadi kesalahan saat menghasilkan rekomendasi. Silakan coba lagi.
-                        </p>
-                    </div>
-                `;
-                resultsDiv.classList.add('show');
             }
-            
+        } catch (error) {
+            showError(resultsDiv, error.message);
+        } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-magic"></i> Generate Rekomendasi Skill';
-        });
+        }
+    });
 
-        document.getElementById('courseForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const btn = document.getElementById('courseBtn');
-            const resultsDiv = document.getElementById('courseResults');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<div class="spinner"></div> Mencari kursus terbaik...';
-            resultsDiv.classList.remove('show');
-            resultsDiv.innerHTML = '';
-            
-            const formData = {
-                interest: document.getElementById('courseInterest').value,
-                level: document.querySelector('input[name="course-level"]:checked').value,
-                purpose: document.getElementById('coursePurpose').value,
-                time: document.querySelector('input[name="time"]:checked').value
-            };
-            
-            const results = await generateCourseRecommendations(formData);
-            
+    // Handler Form Course
+    document.getElementById('courseForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btn = document.getElementById('courseBtn');
+        const resultsDiv = document.getElementById('courseResults');
+
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner"></div> Mencari kursus terbaik...';
+        resultsDiv.classList.remove('show');
+        resultsDiv.innerHTML = '';
+
+        const formData = {
+            interest: document.getElementById('courseInterest').value,
+            level: document.querySelector('input[name="course-level"]:checked').value,
+            purpose: document.getElementById('coursePurpose').value,
+            time: document.querySelector('input[name="time"]:checked').value
+        };
+
+        try {
+            const results = await callLaravelAi('/ai/analyze-course', formData);
             if (results) {
                 displayCourseResults(results);
-            } else {
-                resultsDiv.innerHTML = `
-                    <div class="result-card" style="border-left-color: #e53e3e;">
-                        <p class="result-content" style="color: #e53e3e;">
-                            <i class="fas fa-exclamation-circle"></i> 
-                            Maaf, terjadi kesalahan saat menghasilkan rekomendasi. Silakan coba lagi.
-                        </p>
-                    </div>
-                `;
-                resultsDiv.classList.add('show');
             }
-            
+        } catch (error) {
+            showError(resultsDiv, error.message);
+        } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-magic"></i> Generate Rekomendasi Kursus';
-        });
+        }
+    });
 
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                const modalId = e.target.id;
-                const type = modalId.replace('Modal', '');
-                closeModal(type);
-            }
-        });
-    </script>
+    // --- 4. DISPLAY FUNCTIONS (TAMPILAN HASIL) ---
+
+    function displaySkillResults(data) {
+        const resultsDiv = document.getElementById('skillResults');
+        let html = `
+            <div class="result-section">
+                <div class="result-section-title"><i class="fas fa-chart-pie"></i> Analisis Profil</div>
+                <div class="result-card"><p class="result-content">${data.summary}</p></div>
+            </div>
+            
+            <div class="result-section">
+                <div class="result-section-title"><i class="fas fa-exclamation-triangle"></i> Skill Gaps</div>
+                <div class="result-card"><div class="result-content">
+                    ${data.skillGaps.map(gap => `<span class="tag">${gap}</span>`).join('')}
+                </div></div>
+            </div>
+
+            <div class="result-section">
+                <div class="result-section-title"><i class="fas fa-star"></i> Rekomendasi Prioritas</div>
+                ${data.recommendations.map(rec => `
+                    <div class="skill-item">
+                        <div class="skill-header">
+                            <div class="skill-name">${rec.skill}</div>
+                            <div class="priority-badge priority-${rec.priority}">${rec.priority.toUpperCase()}</div>
+                        </div>
+                        <div class="result-content">
+                            <p><strong>Kenapa:</strong> ${rec.reason}</p>
+                            <p><strong>Cara:</strong> ${rec.learningPath}</p>
+                            <p><strong>Waktu:</strong> ${rec.timeframe}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        resultsDiv.innerHTML = html;
+        resultsDiv.classList.add('show');
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function displayCourseResults(data) {
+        const resultsDiv = document.getElementById('courseResults');
+        let html = `
+            <div class="result-section">
+                <div class="result-section-title"><i class="fas fa-info-circle"></i> Ringkasan</div>
+                <div class="result-card"><p class="result-content">${data.summary}</p></div>
+            </div>
+
+            <div class="result-section">
+                <div class="result-section-title"><i class="fas fa-graduation-cap"></i> Kursus Direkomendasikan</div>
+                ${data.courses.map(course => `
+                    <div class="course-item">
+                        <div class="course-header">
+                            <div class="course-title">${course.title}</div>
+                            <div class="match-score">${course.matchScore}% Match</div>
+                        </div>
+                        <div class="course-meta">
+                            <div class="meta-item"><i class="fas fa-building"></i> ${course.platform}</div>
+                            <div class="meta-item"><i class="fas fa-signal"></i> ${course.level}</div>
+                            <div class="meta-item"><i class="fas fa-clock"></i> ${course.duration}</div>
+                            <div class="meta-item"><i class="fas fa-tag"></i> ${course.estimatedPrice}</div>
+                        </div>
+                        <div class="result-content" style="margin-top: 1rem;">
+                            <p><strong>Topik:</strong> ${course.keyTopics.map(t => `<span class="tag">${t}</span>`).join('')}</p>
+                            <p style="margin-top:0.5rem;"><strong>Alasan:</strong> ${course.whyRecommended}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        resultsDiv.innerHTML = html;
+        resultsDiv.classList.add('show');
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+</script>
 </body>
 </html>

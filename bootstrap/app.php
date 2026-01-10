@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
                      Illuminate\Http\Request::HEADER_X_FORWARDED_PORT |
                      Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO
         );
+        $middleware->validateCsrfTokens(except: [
+        'ai/*', // <--- Tambahkan baris ini agar Postman bisa masuk
+    ]);
+        
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
