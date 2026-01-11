@@ -8,134 +8,128 @@ use Illuminate\Support\Facades\Log;
 
 class AiRecommendationController extends Controller
 {
-    private function callLocalPythonAi($prompt)
+    /**
+     * Helper untuk memanggil API Python
+     */
+    private function callLocalPythonAi($prompt, $isAhp = false)
     {
-        // URL ke Python FastAPI (Port 8001)
-        $url = "https://lfmafic-production.up.railway.app/generate";
+        // Gunakan IP Internal Docker Bridge agar stabil di VPS
+        $endpoint = $isAhp ? "/generate-ahp" : "/generate";
+        $url = "http://skilconnect.smartfarmingpalcomtech.my.id" . $endpoint; 
 
         try {
-            // PERBAIKAN 1: Tambahkan timeout()
-            // Kita set 300 detik (5 menit) agar tidak error saat CPU lambat
-            $response = Http::timeout(300) 
-                ->connectTimeout(300) // Waktu tunggu koneksi
+            $response = Http::timeout(300)
+                ->connectTimeout(300)
                 ->post($url, [
                     'prompt' => $prompt,
-                    // PERBAIKAN 2: Kurangi max_tokens
-                    // 1200 terlalu banyak dan bikin lama. 600 cukup untuk JSON rekomendasi.
-                    'max_tokens' => 600 
+                    'max_tokens' => 1200 
                 ]);
 
             if ($response->failed()) {
                 Log::error('Python AI Error: ' . $response->body());
-                throw new \Exception('Gagal menghubungi Server AI Lokal (Pastikan main.py sudah dijalankan).');
+                throw new \Exception('Gagal menghubungi Server AI (Status: ' . $response->status() . ')');
             }
 
+            // Hasil dari Python sudah berupa JSON Object (sudah diproses AHP)
             return $response->json();
 
         } catch (\Exception $e) {
             Log::error('Controller Error: ' . $e->getMessage());
-            
-            // Pesan error khusus jika timeout
-            if (str_contains($e->getMessage(), 'timed out')) {
-                throw new \Exception('AI terlalu lama merespon (Timeout). Laptop sedang bekerja keras, coba kurangi panjang permintaan.');
-            }
-            
-            if (str_contains($e->getMessage(), 'Connection refused')) {
-                throw new \Exception('Server AI (Python) belum dinyalakan. Jalankan "python main.py" dulu.');
-            }
             throw $e;
         }
     }
 
-    public function recommendSkill(Request $request)
-    {
-        try {
-            $data = $request->validate([
-                'position' => 'required', 'level' => 'required', 
-                'goal' => 'required', 'currentSkills' => 'nullable'
-            ]);
-            
-            $prompt = "Role: Senior Tech Recruiter Indonesia.
-            Task: Analyze candidate profile for modern tech role.
-
-            Candidate Profile:
-            - Role: {$data['position']}
-            - Level: {$data['level']}
-            - Goal: {$data['goal']}
-            - Skills: {$data['currentSkills']}
-
-            IMPORTANT RULES:
-            1. Use FORMAL INDONESIAN (Bahasa Indonesia Baku). Do NOT use Malay words like 'pentadbiran' or 'kerajaan'.
-            2. Focus on modern tech (2025).
-            3. Output VALID JSON ONLY.
-
-            JSON Structure:
-            {
-            \"summary\": \"Tulis analisis profesional 2 kalimat dalam Bahasa Indonesia Baku\",
-            \"skillGaps\": [\"Sebutkan 3 skill teknis modern\"],
-            \"recommendations\": [
-                {
-                \"skill\": \"Nama Skill Utama\",
-                \"priority\": \"High\",
-                \"reason\": \"Alasan dalam Bahasa Indonesia\",
-                \"learningPath\": \"Langkah belajar konkrit\",
-                \"timeframe\": \"Estimasi waktu (minggu/bulan)\"
-                }
-            ],
-            \"industryTrends\": [\"Tren teknologi 1\", \"Tren teknologi 2\"],
-            \"nextSteps\": [\"Langkah pertama yang harus dilakukan\"]
-            }";
-            
-            return response()->json($this->callLocalPythonAi($prompt));
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
-    }
-
+    /**
+     * FITUR 1: Rekomendasi Kursus (Menggunakan Full AHP dari Tugas Akhir)
+     */
     public function recommendCourse(Request $request)
     {
         try {
             $data = $request->validate([
-                'interest' => 'required', 'level' => 'required', 
-                'purpose' => 'required', 'time' => 'required'
+                'interest' => 'required',
+                'level' => 'required',
+                'purpose' => 'required',
+                'time' => 'required'
             ]);
 
+            // PROMPT KHUSUS AHP (Sesuai Kriteria C1-C5 di Excel Anda)
             $prompt = "Role: Education Consultant Indonesia.
-            Task: Recommend online courses.
+Task: Berikan 3-5 rekomendasi kursus berdasarkan kriteria AHP.
 
-            User Profile:
-            - Interest: {$data['interest']}
-            - Level: {$data['level']}
-            - Goal: {$data['purpose']}
-            - Time: {$data['time']}
+User Profile:
+- Minat: {$data['interest']}
+- Level: {$data['level']}
+- Tujuan: {$data['purpose']}
+- Waktu: {$data['time']}
 
-            IMPORTANT RULES:
-            1. Use FORMAL INDONESIAN (Bahasa Indonesia Baku).
-            2. Recommend real platforms (Udemy, Coursera, Dicoding, BuildWithAngga).
-            3. Output VALID JSON ONLY.
+Aturan Rating (WAJIB):
+Gunakan salah satu label ini untuk kriteria C1-C5: ['Sangat Baik', 'Baik', 'Cukup', 'Kurang', 'Sangat Kurang']
 
-            JSON Structure:
-            {
-            \"summary\": \"Saran penyemangat dalam Bahasa Indonesia Baku\",
-            \"courses\": [
-                {
-                \"title\": \"Nama Kursus Spesifik\",
-                \"platform\": \"Nama Platform\",
-                \"level\": \"{$data['level']}\",
-                \"duration\": \"Estimasi durasi\",
-                \"matchScore\": 95,
-                \"keyTopics\": [\"Topik 1\", \"Topik 2\"],
-                \"whyRecommended\": \"Alasan rekomendasi dalam Bahasa Indonesia\",
-                \"estimatedPrice\": \"Gratis / Berbayar\"
-                }
-            ],
-            \"learningPath\": \"Urutan belajar\",
-            \"tips\": [\"Tips belajar 1\"]
-            }";
+Definisi Kriteria:
+- C1 (Harga): 'Sangat Baik' jika murah/gratis, 'Sangat Kurang' jika sangat mahal.
+- C2 (Rating): Kualitas review kursus.
+- C3 (Peminat): Popularitas/Jumlah siswa.
+- C4 (Durasi): 'Sangat Baik' jika efisien/cepat, 'Sangat Kurang' jika terlalu bertele-tele.
+- C5 (Kesulitan): Kesesuaian materi dengan level user.
 
-            return response()->json($this->callLocalPythonAi($prompt));
+JSON Format:
+{
+    \"summary\": \"Ringkasan saran dalam Bahasa Indonesia Baku.\",
+    \"recommendations\": [
+        {
+            \"title\": \"Nama Kursus\",
+            \"platform\": \"Nama Platform\",
+            \"harga_rating\": \"Sangat Baik\",
+            \"rating_rating\": \"Baik\",
+            \"peminat_rating\": \"Cukup\",
+            \"durasi_rating\": \"Baik\",
+            \"kesulitan_rating\": \"Sangat Baik\",
+            \"url\": \"Link kursus\",
+            \"reason\": \"Alasan singkat\"
+        }
+    ],
+    \"learningPath\": \"Langkah belajar\",
+    \"tips\": [\"Tips 1\"]
+}";
+
+            $result = $this->callLocalPythonAi($prompt, true);
+            return response()->json($result);
+
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
-}
+
+    /**
+     * FITUR 2: Analisis Skill Gaps (Rekomendasi Karir)
+     */
+    public function recommendSkill(Request $request)
+    {
+        try {
+            $data = $request->validate([
+                'position' => 'required',
+                'level' => 'required',
+                'goal' => 'required',
+                'currentSkills' => 'nullable'
+            ]);
+
+            $prompt = "Role: Senior Tech Recruiter Indonesia.
+Analisislah profil kandidat berikut untuk mencapai target karirnya.
+
+Profil:
+- Posisi: {$data['position']}
+- Level: {$data['level']}
+- Target: {$data['goal']}
+- Skill Saat Ini: {$data['currentSkills']}
+
+Output harus valid JSON dengan key: summary, skillGaps (array), recommendations (array of objects with skill, priority, reason, learningPath, timeframe), industryTrends (array), dan nextSteps (array). Gunakan Bahasa Indonesia Baku.";
+
+            // Untuk skill gaps, kita gunakan endpoint /generate biasa (tanpa ranking AHP)
+            $result = $this->callLocalPythonAi($prompt, false);
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+}   

@@ -948,11 +948,9 @@
             </div>
         </div>
     </div>
-
-    <script>
+<script>
     // --- 1. SETUP & HELPER FUNCTIONS ---
 
-    // Fungsi untuk membuka Modal
     window.openModal = function(type) {
         const modal = document.getElementById(type + 'Modal');
         if (modal) {
@@ -961,7 +959,6 @@
         }
     }
 
-    // Fungsi untuk menutup Modal
     window.closeModal = function(type) {
         const modal = document.getElementById(type + 'Modal');
         if (modal) {
@@ -978,7 +975,6 @@
         }
     }
 
-    // Tutup modal jika klik di luar area konten
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('modal')) {
             const modalId = e.target.id;
@@ -987,13 +983,12 @@
         }
     });
 
-    // Helper untuk menampilkan Error di UI
     function showError(container, message) {
         container.innerHTML = `
             <div class="result-card" style="border-left-color: #e53e3e; background: #fff5f5; padding: 1rem;">
                 <p class="result-content" style="color: #e53e3e;">
                     <i class="fas fa-exclamation-circle"></i> 
-                    ${message || 'Maaf, terjadi kesalahan pada server. Coba lagi nanti.'}
+                    ${message || 'Terjadi kesalahan. Pastikan Server AI sudah aktif.'}
                 </p>
             </div>
         `;
@@ -1003,20 +998,22 @@
     // --- 2. CORE LOGIC: PANGGIL LARAVEL ---
 
     async function callLaravelAi(url, data) {
-        // Ambil CSRF Token
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         if (!csrfToken) {
-            alert("Error: CSRF Token tidak ditemukan. Pastikan <meta name='csrf-token' ...> ada di <head>.");
+            alert("CSRF Token missing!");
             return null;
         }
 
         try {
-            const response = await fetch(url, {
+            // Menghapus slash ganda jika ada
+            const cleanUrl = url.replace(/\/+/g, '/');
+            
+            const response = await fetch(cleanUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": csrfToken.getAttribute('content'),
-                    "Accept": "application/json" // Agar Laravel mengembalikan JSON saat error
+                    "Accept": "application/json"
                 },
                 body: JSON.stringify(data)
             });
@@ -1024,31 +1021,26 @@
             const result = await response.json();
 
             if (!response.ok) {
-                // Jika server 500 atau 400, lempar error dengan pesan dari server
-                throw new Error(result.message || result.error || 'Terjadi kesalahan server');
+                throw new Error(result.message || 'Gagal terhubung ke server AI');
             }
 
             return result;
         } catch (error) {
-            console.error('Error Detail:', error);
-            throw error; // Lempar ke handler di bawah
+            console.error('Fetch Error:', error);
+            throw error;
         }
     }
 
     // --- 3. EVENT LISTENERS ---
 
-    // Handler Form Skill
     document.getElementById('skillForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const btn = document.getElementById('skillBtn');
         const resultsDiv = document.getElementById('skillResults');
 
-        // Loading UI
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner"></div> Menganalisis...';
         resultsDiv.classList.remove('show');
-        resultsDiv.innerHTML = '';
 
         const formData = {
             position: document.getElementById('skillPosition').value,
@@ -1058,10 +1050,8 @@
         };
 
         try {
-            const results = await callLaravelAi('/ai/analyze-skill', formData);
-            if (results) {
-                displaySkillResults(results);
-            }
+            const result = await callLaravelAi('/ai/analyze-skill', formData);
+            displaySkillResults(result);
         } catch (error) {
             showError(resultsDiv, error.message);
         } finally {
@@ -1070,17 +1060,14 @@
         }
     });
 
-    // Handler Form Course
     document.getElementById('courseForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const btn = document.getElementById('courseBtn');
         const resultsDiv = document.getElementById('courseResults');
 
         btn.disabled = true;
-        btn.innerHTML = '<div class="spinner"></div> Mencari kursus terbaik...';
+        btn.innerHTML = '<div class="spinner"></div> Menghitung AHP...';
         resultsDiv.classList.remove('show');
-        resultsDiv.innerHTML = '';
 
         const formData = {
             interest: document.getElementById('courseInterest').value,
@@ -1090,10 +1077,8 @@
         };
 
         try {
-            const results = await callLaravelAi('/ai/analyze-course', formData);
-            if (results) {
-                displayCourseResults(results);
-            }
+            const result = await callLaravelAi('/ai/analyze-course', formData);
+            displayCourseResults(result);
         } catch (error) {
             showError(resultsDiv, error.message);
         } finally {
@@ -1102,34 +1087,40 @@
         }
     });
 
-    // --- 4. DISPLAY FUNCTIONS (TAMPILAN HASIL) ---
+    // --- 4. DISPLAY FUNCTIONS (Sesuai Struktur AHP) ---
 
     function displaySkillResults(data) {
         const resultsDiv = document.getElementById('skillResults');
+        // Safety Check: Pastikan array ada sebelum .map()
+        const gaps = data.skillGaps || [];
+        const recs = data.recommendations || [];
+
         let html = `
             <div class="result-section">
                 <div class="result-section-title"><i class="fas fa-chart-pie"></i> Analisis Profil</div>
-                <div class="result-card"><p class="result-content">${data.summary}</p></div>
+                <div class="result-card"><p class="result-content">${data.summary || 'Analisis selesai.'}</p></div>
             </div>
             
             <div class="result-section">
                 <div class="result-section-title"><i class="fas fa-exclamation-triangle"></i> Skill Gaps</div>
-                <div class="result-card"><div class="result-content">
-                    ${data.skillGaps.map(gap => `<span class="tag">${gap}</span>`).join('')}
-                </div></div>
+                <div class="result-card">
+                    <div class="result-content">
+                        ${gaps.length > 0 ? gaps.map(gap => `<span class="tag">${gap}</span>`).join('') : 'Tidak ada gap terdeteksi.'}
+                    </div>
+                </div>
             </div>
 
             <div class="result-section">
-                <div class="result-section-title"><i class="fas fa-star"></i> Rekomendasi Prioritas</div>
-                ${data.recommendations.map(rec => `
+                <div class="result-section-title"><i class="fas fa-star"></i> Rekomendasi Karir</div>
+                ${recs.map(rec => `
                     <div class="skill-item">
                         <div class="skill-header">
                             <div class="skill-name">${rec.skill}</div>
-                            <div class="priority-badge priority-${rec.priority}">${rec.priority.toUpperCase()}</div>
+                            <div class="priority-badge priority-${(rec.priority || 'medium').toLowerCase()}">${rec.priority}</div>
                         </div>
                         <div class="result-content">
                             <p><strong>Kenapa:</strong> ${rec.reason}</p>
-                            <p><strong>Cara:</strong> ${rec.learningPath}</p>
+                            <p><strong>Langkah:</strong> ${rec.learningPath}</p>
                             <p><strong>Waktu:</strong> ${rec.timeframe}</p>
                         </div>
                     </div>
@@ -1138,37 +1129,57 @@
         `;
         resultsDiv.innerHTML = html;
         resultsDiv.classList.add('show');
-        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function displayCourseResults(data) {
         const resultsDiv = document.getElementById('courseResults');
+        
+        // Penyesuaian Key: Sekarang menggunakan 'recommendations' bukan 'courses'
+        const recs = data.recommendations || [];
+
         let html = `
             <div class="result-section">
-                <div class="result-section-title"><i class="fas fa-info-circle"></i> Ringkasan</div>
-                <div class="result-card"><p class="result-content">${data.summary}</p></div>
+                <div class="result-section-title"><i class="fas fa-info-circle"></i> Hasil Keputusan (Metode AHP)</div>
+                <div class="result-card">
+                    <p class="result-content">${data.summary || 'Berikut adalah pilihan kursus terbaik berdasarkan perhitungan matematis.'}</p>
+                    ${data.ahp_metadata ? `<p style="font-size:0.8rem; color:#718096; margin-top:10px;"><i>*Sorted by Eigen Vector Weights (AHP)</i></p>` : ''}
+                </div>
             </div>
 
             <div class="result-section">
-                <div class="result-section-title"><i class="fas fa-graduation-cap"></i> Kursus Direkomendasikan</div>
-                ${data.courses.map(course => `
-                    <div class="course-item">
+                <div class="result-section-title"><i class="fas fa-graduation-cap"></i> Ranking Alternatif Kursus</div>
+                ${recs.map((course, index) => `
+                    <div class="course-item" style="${index === 0 ? 'border: 2px solid #667eea; background: #f0f4ff;' : ''}">
                         <div class="course-header">
-                            <div class="course-title">${course.title}</div>
-                            <div class="match-score">${course.matchScore}% Match</div>
+                            <div class="course-title">
+                                ${index === 0 ? '<i class="fas fa-crown" style="color:#f39c12"></i> ' : ''}
+                                ${course.title}
+                            </div>
+                            <div class="match-score">Score: ${course.ahp_score}</div>
                         </div>
                         <div class="course-meta">
-                            <div class="meta-item"><i class="fas fa-building"></i> ${course.platform}</div>
-                            <div class="meta-item"><i class="fas fa-signal"></i> ${course.level}</div>
-                            <div class="meta-item"><i class="fas fa-clock"></i> ${course.duration}</div>
-                            <div class="meta-item"><i class="fas fa-tag"></i> ${course.estimatedPrice}</div>
+                            <div class="meta-item"><i class="fas fa-building"></i> ${course.platform || 'Online'}</div>
+                            <div class="meta-item"><i class="fas fa-tag"></i> Harga: <b>${course.harga_rating}</b></div>
+                            <div class="meta-item"><i class="fas fa-star"></i> Rating: <b>${course.rating_rating}</b></div>
+                            <div class="meta-item"><i class="fas fa-clock"></i> Durasi: <b>${course.durasi_rating}</b></div>
                         </div>
                         <div class="result-content" style="margin-top: 1rem;">
-                            <p><strong>Topik:</strong> ${course.keyTopics.map(t => `<span class="tag">${t}</span>`).join('')}</p>
-                            <p style="margin-top:0.5rem;"><strong>Alasan:</strong> ${course.whyRecommended}</p>
+                            <p><strong>Alasan (Prioritas ${course.priority_rank}):</strong> ${course.reason}</p>
+                            <a href="${course.url || '#'}" target="_blank" class="btn-start" style="margin-top:1rem; text-decoration:none; padding: 0.6rem; font-size:0.9rem;">
+                                Kunjungi Kursus <i class="fas fa-external-link-alt"></i>
+                            </a>
                         </div>
                     </div>
                 `).join('')}
+            </div>
+
+            <div class="result-section">
+                <div class="result-section-title"><i class="fas fa-lightbulb"></i> Tips Belajar</div>
+                <div class="result-card">
+                    <ul class="result-content">
+                        ${(data.tips || ['Konsisten belajar setiap hari']).map(t => `<li>${t}</li>`).join('')}
+                    </ul>
+                </div>
             </div>
         `;
         resultsDiv.innerHTML = html;
