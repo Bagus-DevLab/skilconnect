@@ -11,11 +11,11 @@ class AiRecommendationController extends Controller
 {
     /**
      * Helper untuk memanggil API Python
-     */
+     */ 
     private function callLocalPythonAi($prompt, $isAhp = false)
     {
         $endpoint = $isAhp ? "/generate-ahp" : "/generate";
-        $url = "http://skilconnect.smartfarmingpalcomtech.my.id" . $endpoint; 
+        $url = "http://skillconnect.my.id/" . $endpoint; 
 
         try {
             $response = Http::timeout(300)
