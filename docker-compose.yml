@@ -40,6 +40,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       # MYSQL_USER: ${DB_USERNAME}
     volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - dbdata:/var/lib/mysql
     networks:
       - laravel-network

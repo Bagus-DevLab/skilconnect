@@ -1131,57 +1131,109 @@
         resultsDiv.classList.add('show');
     }
 
+    // Tambahkan di script bagian displayCourseResults
     function displayCourseResults(data) {
         const resultsDiv = document.getElementById('courseResults');
-        
-        // Penyesuaian Key: Sekarang menggunakan 'recommendations' bukan 'courses'
         const recs = data.recommendations || [];
+
+        // Header Info
+        let headerInfo = '';
+        if (data.source === 'internal_database') {
+            headerInfo = `
+                <div class="result-card" style="background: #e6f7ff; border-left-color: #1890ff;">
+                    <p class="result-content">
+                        <i class="fas fa-database"></i> 
+                        <strong>Sumber:</strong> Kursus dari platform SkillConnect.id<br>
+                        <strong>Total dianalisis:</strong> ${data.total_courses_analyzed} kursus
+                    </p>
+                </div>
+            `;
+        }
 
         let html = `
             <div class="result-section">
-                <div class="result-section-title"><i class="fas fa-info-circle"></i> Hasil Keputusan (Metode AHP)</div>
+                <div class="result-section-title">
+                    <i class="fas fa-info-circle"></i> Hasil Analisis AHP
+                </div>
+                ${headerInfo}
                 <div class="result-card">
-                    <p class="result-content">${data.summary || 'Berikut adalah pilihan kursus terbaik berdasarkan perhitungan matematis.'}</p>
-                    ${data.ahp_metadata ? `<p style="font-size:0.8rem; color:#718096; margin-top:10px;"><i>*Sorted by Eigen Vector Weights (AHP)</i></p>` : ''}
+                    <p class="result-content">${data.summary || 'Berikut ranking kursus terbaik untuk Anda.'}</p>
                 </div>
             </div>
 
             <div class="result-section">
-                <div class="result-section-title"><i class="fas fa-graduation-cap"></i> Ranking Alternatif Kursus</div>
+                <div class="result-section-title">
+                    <i class="fas fa-trophy"></i> Ranking Kursus Terbaik
+                </div>
                 ${recs.map((course, index) => `
-                    <div class="course-item" style="${index === 0 ? 'border: 2px solid #667eea; background: #f0f4ff;' : ''}">
+                    <div class="course-item" style="${index === 0 ? 'border: 3px solid #667eea; background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);' : ''}">
                         <div class="course-header">
-                            <div class="course-title">
-                                ${index === 0 ? '<i class="fas fa-crown" style="color:#f39c12"></i> ' : ''}
-                                ${course.title}
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                ${index === 0 ? '<i class="fas fa-crown" style="color:#f39c12; font-size:1.5rem;"></i>' : `<span style="font-size:1.5rem; font-weight:bold; color:#cbd5e0;">#${index + 1}</span>`}
+                                <div>
+                                    <div class="course-title">${course.title}</div>
+                                    <div style="font-size:0.85rem; color:#718096; margin-top:0.3rem;">
+                                        <i class="fas fa-chalkboard-teacher"></i> ${course.original_data?.instructor || 'SkillConnect'}
+                                        ${course.category ? ` | <i class="fas fa-tag"></i> ${course.category}` : ''}
+                                    </div>
+                                </div>
                             </div>
-                            <div class="match-score">Score: ${course.ahp_score}</div>
+                            <div class="match-score" style="font-size:1.1rem;">
+                                ${course.ahp_score ? `⭐ ${course.ahp_score}` : 'N/A'}
+                            </div>
                         </div>
-                        <div class="course-meta">
-                            <div class="meta-item"><i class="fas fa-building"></i> ${course.platform || 'Online'}</div>
-                            <div class="meta-item"><i class="fas fa-tag"></i> Harga: <b>${course.harga_rating}</b></div>
-                            <div class="meta-item"><i class="fas fa-star"></i> Rating: <b>${course.rating_rating}</b></div>
-                            <div class="meta-item"><i class="fas fa-clock"></i> Durasi: <b>${course.durasi_rating}</b></div>
+
+                        <!-- Rating Detail -->
+                        // Di bagian displayCourseResults, update bagian rating detail:
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.8rem; margin: 1rem 0; padding: 1rem; background: rgba(102,126,234,0.05); border-radius: 8px;">
+                            <div style="text-align: center;">
+                                <div style="font-size:0.75rem; color:#718096;">💰 Harga</div>
+                                <div style="font-weight:700; color:#2d3748;">${course.harga_rating}</div>
+                                <div style="font-size:0.7rem; color:#a0aec0;">Rp ${course.original_data?.price ? course.original_data.price.toLocaleString('id-ID') : '0'}</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size:0.75rem; color:#718096;">👥 Peminat</div>
+                                <div style="font-weight:700; color:#2d3748;">${course.peminat_rating}</div>
+                                <div style="font-size:0.7rem; color:#a0aec0;">${course.original_data?.students || 0} peserta</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size:0.75rem; color:#718096;">⏱️ Durasi</div>
+                                <div style="font-weight:700; color:#2d3748;">${course.durasi_rating}</div>
+                                <div style="font-size:0.7rem; color:#a0aec0;">${course.original_data?.duration_text || 'N/A'}</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size:0.75rem; color:#718096;">📂 Kategori</div>
+                                <div style="font-weight:700; color:#2d3748;">${course.category}</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size:0.75rem; color:#718096;">📊 Kesulitan</div>
+                                <div style="font-weight:700; color:#2d3748;">${course.kesulitan_rating}</div>
+                            </div>
                         </div>
+
                         <div class="result-content" style="margin-top: 1rem;">
-                            <p><strong>Alasan (Prioritas ${course.priority_rank}):</strong> ${course.reason}</p>
-                            <a href="${course.url || '#'}" target="_blank" class="btn-start" style="margin-top:1rem; text-decoration:none; padding: 0.6rem; font-size:0.9rem;">
-                                Kunjungi Kursus <i class="fas fa-external-link-alt"></i>
-                            </a>
+                            <p><strong><i class="fas fa-check-circle" style="color:#48bb78;"></i> Kenapa Cocok:</strong> ${course.reason}</p>
                         </div>
+
+                        <a href="${course.url}" class="btn-start" style="margin-top:1rem; text-decoration:none; padding: 0.8rem; font-size:0.95rem;">
+                            ${index === 0 ? '<i class="fas fa-star"></i> Mulai Kursus Terbaik' : '<i class="fas fa-play-circle"></i> Lihat Detail Kursus'}
+                        </a>
                     </div>
                 `).join('')}
             </div>
 
-            <div class="result-section">
-                <div class="result-section-title"><i class="fas fa-lightbulb"></i> Tips Belajar</div>
-                <div class="result-card">
-                    <ul class="result-content">
-                        ${(data.tips || ['Konsisten belajar setiap hari']).map(t => `<li>${t}</li>`).join('')}
-                    </ul>
+            ${data.tips && data.tips.length > 0 ? `
+                <div class="result-section">
+                    <div class="result-section-title"><i class="fas fa-lightbulb"></i> Tips Belajar</div>
+                    <div class="result-card">
+                        <ul class="result-content">
+                            ${data.tips.map(t => `<li>${t}</li>`).join('')}
+                        </ul>
+                    </div>
                 </div>
-            </div>
+            ` : ''}
         `;
+        
         resultsDiv.innerHTML = html;
         resultsDiv.classList.add('show');
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

@@ -15,6 +15,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# Tambahkan ini di Dockerfile
+RUN echo "max_execution_time=600" > /usr/local/etc/php/conf.d/docker-php-maxexectime.ini
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
