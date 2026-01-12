@@ -217,7 +217,7 @@
             <li><a href="{{ url('/') }}" class="{{ Request::is('/') ? 'active' : '' }}">Beranda</a></li>
             {{-- Menggunakan is-active jika Anda berada di halaman kursus --}}
             <li><a href="{{ url('/') }}#courses" class="{{ Request::is('courses*') ? 'active' : '' }}">Kursus</a></li> 
-            <li><a href="{{ route('ai.recommendation') }}" class="{{ Request::is('ai-recommendation') ? 'active' : '' }}">AI Rekomendasi</a></li>
+            <li><a href="{{ route('ai.view') }}" class="{{ Request::is('ai-recommendation') ? 'active' : '' }}">AI Rekomendasi</a></li>
             <li><a href="{{ route('about') }}" class="{{ Request::is('about') ? 'active' : '' }}">Tentang</a></li>
             <li><a href="{{ route('contact') }}" class="{{ Request::is('contact') ? 'active' : '' }}">Kontak</a></li>
             
