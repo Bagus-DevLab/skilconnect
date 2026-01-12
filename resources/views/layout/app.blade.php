@@ -1,33 +1,35 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Aplikasi Kursus')</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillConnect.id</title>
     
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet"> 
-    @stack('styles')
+    {{-- 1. Bootstrap CSS (Wajib untuk tata letak container/row/col) --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    {{-- 2. Font Awesome (Wajib untuk ikon fas fa-robot, dll) --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    {{-- 3. Custom CSS jika ada --}}
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 80px; /* Jarak agar konten tidak tertutup Navbar Fixed */
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body>
 
-    {{-- Header / Navbar Utama Aplikasi --}}
-    <header>
-        @include('partials.header') 
-        {{-- Anda mungkin perlu membuat file parsial ini --}}
-    </header>
+    {{-- A. INCLUDE NAVBAR DI SINI --}}
+    @include('components.navbar')
 
-    {{-- Konten utama aplikasi akan dimuat di sini --}}
-    <main class="py-4">
+    {{-- B. KONTEN HALAMAN AKAN MUNCUL DI SINI --}}
+    <main>
         @yield('content')
     </main>
 
-    {{-- Footer --}}
-    <footer>
-        @include('partials.footer') 
-        {{-- Anda mungkin perlu membuat file parsial ini --}}
-    </footer>
-
-    <script src="{{ asset('js/app.js') }}"></script>
-    @stack('scripts')
+    {{-- 4. Bootstrap JS Bundle --}}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
