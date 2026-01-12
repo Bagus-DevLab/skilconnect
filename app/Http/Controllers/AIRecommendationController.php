@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Course;
 
-class AiRecommendationController extends Controller
+class AIRecommendationController extends Controller
 {
     // ==========================================
     // BAGIAN 1: KONFIGURASI & HELPER
