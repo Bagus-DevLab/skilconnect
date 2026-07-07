@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Course;
+use Illuminate\Support\Facades\Auth;
 
 class LandingController extends Controller
 {
@@ -61,7 +62,23 @@ class LandingController extends Controller
         // 4. Urutkan berdasarkan skor tertinggi dan ambil yang terbaik
         $recommendedCourse = $courseScores->sortByDesc('ai_score')->first();
 
-        return view('landing', compact('courses', 'categories', 'recommendedCourse'));
+        $activeCoursesCount = 0;
+        $finishedCoursesCount = 0;
+        $totalInvestment = 0;
+        $lastCourse = null;
+
+        if (Auth::check()) {
+            $user = Auth::user();
+            $activeCoursesCount = $user->courses()->wherePivot('status', 'active')->count();
+            $finishedCoursesCount = $user->courses()->wherePivot('status', 'finished')->count();
+            $totalInvestment = $user->courses()->sum('price');
+            $lastCourse = $user->courses()->orderByPivot('last_accessed_at', 'desc')->first();
+        }
+
+        return view('landing', compact(
+            'courses', 'categories', 'recommendedCourse',
+            'activeCoursesCount', 'finishedCoursesCount', 'totalInvestment', 'lastCourse'
+        ));
     }
 }
 

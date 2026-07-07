@@ -4,91 +4,163 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
-use App\Models\Lesson; // Pastikan Model Lesson ada, kalau belum ada kita bahas
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class CourseController extends Controller
 {
-    // 1. LIST SEMUA KURSUS (Untuk Tab Courses)
+    // 1. LIST SEMUA KURSUS
     public function index()
     {
         $courses = Course::all();
-        // Atau kalau mau filter yg user enroll saja, logika bisa disesuaikan
         return response()->json($courses);
     }
 
-    // 2. DETAIL KURSUS & LIST LESSON (PENTING BUAT FLUTTER)
+    // 2. DETAIL KURSUS - Bug fix: method 'show' sebelumnya tidak ada
+    public function show($id)
+    {
+        $course = Course::find($id);
+        if (!$course) {
+            return response()->json(['message' => 'Kursus tidak ditemukan'], 404);
+        }
+        return response()->json($course);
+    }
+
+    // 3. LESSONS KURSUS
     public function lessons(Request $request, $course_id)
     {
-        // Cari kursus
         $course = Course::find($course_id);
         if (!$course) {
             return response()->json(['message' => 'Kursus tidak ditemukan'], 404);
         }
 
-        // Cek Enrollment User
         $enrollment = $request->user()->courses()
-                        ->where('course_id', $course_id)
-                        ->first();
+            ->where('course_id', $course_id)
+            ->first();
 
-        // Ambil Daftar Materi (Assuming kamu punya tabel lessons)
-        // Kalau tabel lessons belum ada, nanti kita akali.
-        // Tapi idealnya: $lessons = $course->lessons;
-        
-        // SEMENTARA: Kita return data dummy atau struktur lesson jika ada
-        // Biar Flutter "Step 15" nanti bisa jalan.
-        
         return response()->json([
-            'course' => $course,
+            'course'      => $course,
             'is_enrolled' => $enrollment ? true : false,
-            'progress' => $enrollment ? $enrollment->pivot->progress : 0,
-            // Nanti ini diganti real data dari tabel 'lessons'
-            'lessons' => $course->lessons ?? [] 
+            'progress'    => $enrollment ? ($enrollment->pivot->progress ?? 0) : 0,
+            'lessons'     => $course->lessons ?? [],
         ]);
     }
 
-    // 3. COMPLETE LESSON (VERSI API)
+    // 4. UPDATE PROGRESS (complete lesson)
     public function completeLesson(Request $request, $id)
     {
-        $user = $request->user();
+        $user   = $request->user();
         $course = Course::find($id);
 
         if (!$course) {
             return response()->json(['message' => 'Kursus tidak ditemukan'], 404);
         }
-        
-        // Cek Enrollment
+
         $enrollment = $user->courses()->where('course_id', $course->id)->first();
-        
+
         if (!$enrollment) {
-            return response()->json(['message' => 'Anda belum terdaftar'], 403);
+            return response()->json(['message' => 'Anda belum terdaftar di kursus ini'], 403);
         }
-        
-        // LOGIC UPDATE PROGRESS (Copy dari Web Controller kamu)
-        $currentProgress = $enrollment->pivot->progress;
-        
-        // Tambah 10% (Atau logika lain per lesson)
-        $newProgress = min($currentProgress + 10, 100); 
-        $status = $newProgress >= 100 ? 'finished' : 'active';
-        
+
+        $currentProgress = $enrollment->pivot->progress ?? 0;
+        $newProgress     = min($currentProgress + 10, 100);
+        $status          = $newProgress >= 100 ? 'finished' : 'active';
+
         $user->courses()->updateExistingPivot($course->id, [
-            'progress' => $newProgress,
-            'status' => $status
+            'progress'         => $newProgress,
+            'status'           => $status,
+            'last_accessed_at' => now(),
         ]);
-        
+
         return response()->json([
-            'message' => 'Progress berhasil diupdate',
-            'progress' => $newProgress,
-            'status' => $status,
-            'is_completed' => $newProgress >= 100
+            'message'      => 'Progress berhasil diupdate',
+            'progress'     => $newProgress,
+            'status'       => $status,
+            'is_completed' => $newProgress >= 100,
         ]);
     }
 
-    // 4. MY COURSES (List kursus yang diambil user)
+    // 5. MY COURSES - Bug fix: sebelumnya tidak include pivot data (progress/status)
     public function myCourses(Request $request)
     {
-        $courses = $request->user()->courses()->get();
-        return response()->json(['data' => $courses]); // Format sesuai repository Flutter
+        $courses = $request->user()
+            ->courses()
+            ->withPivot('progress', 'status', 'last_accessed_at')
+            ->get()
+            ->map(function ($course) {
+                $data           = $course->toArray();
+                $data['pivot']  = [
+                    'progress'         => $course->pivot->progress ?? 0,
+                    'status'           => $course->pivot->status ?? 'active',
+                    'last_accessed_at' => $course->pivot->last_accessed_at,
+                ];
+                // Tambahkan progress & status langsung di root untuk kemudahan Flutter
+                $data['progress'] = $course->pivot->progress ?? 0;
+                $data['status']   = $course->pivot->status ?? 'active';
+                return $data;
+            });
+
+        return response()->json(['data' => $courses]);
+    }
+
+    // 6. AI RECOMMENDATIONS - AHP algorithm sama seperti web
+    public function recommendations(Request $request)
+    {
+        $query = Course::query();
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        $filteredCourses = $query->get();
+
+        if ($filteredCourses->isEmpty()) {
+            return response()->json(['data' => [], 'best_match' => null, 'categories' => Course::distinct()->pluck('category')]);
+        }
+
+        $pPrice  = (float) $request->get('pref_price', 1);
+        $pRating = (float) $request->get('pref_rating', 1);
+
+        $minPrice  = Course::min('price')  ?: 1;
+        $maxRating = Course::max('rating') ?: 1;
+
+        $baseWeights = ['price' => 0.515, 'rating' => 0.222];
+
+        $results = $filteredCourses->map(function ($course) use ($minPrice, $maxRating, $baseWeights, $pPrice, $pRating) {
+            $nPrice  = $minPrice / ($course->price  ?: 1);
+            $nRating = ($course->rating ?: 0) / $maxRating;
+
+            $course->user_match_score = ($nPrice  * ($baseWeights['price']  * $pPrice))
+                                      + ($nRating * ($baseWeights['rating'] * $pRating));
+            return $course;
+        })->sortByDesc('user_match_score')->values();
+
+        return response()->json([
+            'categories' => Course::distinct()->pluck('category'),
+            'best_match' => $results->first(),
+            'data'       => $results,
+        ]);
+    }
+
+    // 7. MY CERTIFICATES - Bug fix: method ini sebelumnya tidak ada sama sekali!
+    public function myCertificates(Request $request)
+    {
+        $certificates = $request->user()
+            ->courses()
+            ->withPivot('progress', 'status', 'last_accessed_at')
+            ->wherePivot('status', 'finished')
+            ->get()
+            ->map(function ($course) {
+                $data           = $course->toArray();
+                $data['pivot']  = [
+                    'progress'         => $course->pivot->progress ?? 100,
+                    'status'           => $course->pivot->status ?? 'finished',
+                    'last_accessed_at' => $course->pivot->last_accessed_at,
+                ];
+                $data['progress'] = $course->pivot->progress ?? 100;
+                $data['status']   = 'finished';
+                return $data;
+            });
+
+        return response()->json(['data' => $certificates]);
     }
 }

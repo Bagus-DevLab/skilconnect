@@ -40,7 +40,118 @@
         </div>
     </section>
 
-    {{-- 2. FEATURES SECTION --}}
+    {{-- 2. DASHBOARD SECTION (Hanya muncul jika user login) --}}
+    @auth
+    <section class="py-12 bg-blue-50 border-b border-blue-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            {{-- Greeting --}}
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-gray-900">
+                        Selamat datang kembali, <span class="text-blue-600">{{ Auth::user()->name }}</span>!
+                    </h2>
+                    <p class="text-gray-500 text-sm mt-1">Lanjutkan perjalanan belajar Anda hari ini.</p>
+                </div>
+                <a href="{{ route('my-courses') }}" class="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
+                    Lihat semua kursus saya
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+            </div>
+
+            {{-- Stats Row --}}
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div class="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 border border-blue-100">
+                    <div class="p-3 rounded-xl bg-blue-100">
+                        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Kursus Aktif</p>
+                        <p class="text-2xl font-bold text-gray-800">{{ $activeCoursesCount }}</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 border border-green-100">
+                    <div class="p-3 rounded-xl bg-green-100">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Sertifikat Selesai</p>
+                        <p class="text-2xl font-bold text-gray-800">{{ $finishedCoursesCount }}</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 border border-yellow-100">
+                    <div class="p-3 rounded-xl bg-yellow-100">
+                        <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Total Investasi</p>
+                        <p class="text-xl font-bold text-gray-800">Rp {{ number_format($totalInvestment, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Last Course + Notepad --}}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {{-- Last Course Banner --}}
+                <div class="lg:col-span-2">
+                    @if($lastCourse)
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-700 text-xs uppercase tracking-wide">Lanjutkan Belajar</h3>
+                                <a href="{{ route('my-courses') }}" class="text-xs text-blue-600 font-bold hover:underline">Lihat Semua</a>
+                            </div>
+                            <div class="p-5 flex flex-col sm:flex-row gap-5">
+                                <img src="{{ asset('storage/' . $lastCourse->image) }}" class="w-full sm:w-36 h-24 object-cover rounded-xl shadow-sm" alt="{{ $lastCourse->title }}">
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <h4 class="text-base font-bold text-gray-900">{{ $lastCourse->title }}</h4>
+                                        <p class="text-xs text-gray-400 mt-0.5 uppercase tracking-wide">{{ $lastCourse->category }}</p>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="flex justify-between text-xs text-gray-500 mb-1 font-semibold">
+                                            <span>Progress Belajar</span>
+                                            <span class="text-blue-600">{{ $lastCourse->pivot->progress }}%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-100 rounded-full h-2 mb-3">
+                                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: {{ $lastCourse->pivot->progress }}%"></div>
+                                        </div>
+                                        <a href="{{ route('course.learn', $lastCourse->id) }}"
+                                            class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-5 py-2 rounded-lg transition">
+                                            Lanjutkan
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="bg-white rounded-2xl shadow-sm border-2 border-dashed border-blue-200 p-10 text-center">
+                            <svg class="w-12 h-12 text-blue-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/></svg>
+                            <p class="text-gray-500 font-medium mb-1">Anda belum terdaftar di kursus manapun.</p>
+                            <a href="#courses" class="text-blue-600 font-bold hover:underline text-sm">Cari Kursus Sekarang &rarr;</a>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- Catatan Pribadi --}}
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-2xl shadow-sm border border-yellow-100 overflow-hidden">
+                        <div class="px-5 py-3 border-b border-yellow-100 bg-yellow-50 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            <h3 class="font-bold text-yellow-800 text-xs uppercase tracking-wide">Catatan Pribadi</h3>
+                        </div>
+                        @livewire('note-manager')
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+    @endauth
+
+    {{-- 3. FEATURES SECTION --}}
     <section id="features" class="py-16 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
@@ -272,7 +383,8 @@
         </div>
     </section>
 
-    {{-- 6. CTA SECTION --}}
+    {{-- 6. CTA SECTION (Hanya untuk guest) --}}
+    @guest
     <section class="bg-blue-600 py-20 relative overflow-hidden">
         <div class="max-w-4xl mx-auto px-4 text-center relative z-10">
             <h2 class="text-4xl font-black text-white sm:text-5xl mb-6">Siap Memulai Perjalanan Belajar Anda?</h2>
@@ -282,5 +394,6 @@
             </a>
         </div>
     </section>
+    @endguest
 
 </x-layouts.landing>

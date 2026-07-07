@@ -60,31 +60,37 @@ class CourseController extends Controller
 
     public function downloadCertificate($courseId)
     {
+        // Support session auth (web) dan Bearer token (Flutter mobile)
         $user = auth()->user();
 
-        // Ambil data kursus dan pastikan statusnya 'finished'
+        if (!$user && request()->has('token')) {
+            $tokenModel = \Laravel\Sanctum\PersonalAccessToken::findToken(request('token'));
+            $user = $tokenModel?->tokenable;
+        }
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
         $course = $user->courses()
             ->where('course_id', $courseId)
             ->wherePivot('status', 'finished')
             ->firstOrFail();
 
         $data = [
-            'name' => $user->name,
+            'name'         => $user->name,
             'course_title' => $course->title,
-            'date' => now()->format('d F Y'),
-            'cert_id' => 'SC-' . $course->id . $user->id . '-' . rand(1000, 9999)
+            'date'         => now()->format('d F Y'),
+            'cert_id'      => 'SC-' . $course->id . str_pad($user->id, 3, '0', STR_PAD_LEFT) . '-' . $user->id,
         ];
 
-        /** * CATATAN PENTING:
-         * Pilih salah satu opsi di bawah ini.
-         */
-
-        // OPSI A: Jika library DomPDF BELUM terinstall (Hanya menampilkan HTML di browser)
-        // return view('pdf.certificate', $data);
-
-        // OPSI B: Jika library DomPDF SUDAH terinstall (Download PDF otomatis)
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.certificate', $data)->setPaper('a4', 'landscape');
-        return $pdf->download('Sertifikat-' . $course->title . '.pdf');
+        try {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.certificate', $data)
+                ->setPaper('a4', 'landscape');
+            return $pdf->download('Sertifikat-SkillConnect-' . str_replace(' ', '-', $course->title) . '.pdf');
+        } catch (\Exception $e) {
+            return view('pdf.certificate', $data);
+        }
     }
 
     public function recommend(Request $request)

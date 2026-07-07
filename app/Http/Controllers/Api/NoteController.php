@@ -31,6 +31,24 @@ class NoteController extends Controller
         return response()->json($note, 201);
     }
 
+    public function update(Request $request, $id)
+    {
+        $note = Note::find($id);
+
+        if (!$note) {
+            return response()->json(['message' => 'Catatan tidak ditemukan'], 404);
+        }
+
+        if ($note->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Anda tidak punya akses'], 403);
+        }
+
+        $request->validate(['content' => 'required|string']);
+        $note->update(['content' => $request->content]);
+
+        return response()->json($note);
+    }
+
     public function destroy($id)
     {
         // 1. Cari note berdasarkan ID
