@@ -1,51 +1,70 @@
-# --- Stage 1: Build Assets (Tailwind/Vite) ---
-FROM node:20-alpine as frontend
+FROM composer:2 AS php-deps
+
 WORKDIR /app
+
+COPY composer.json composer.lock ./
+
+RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-autoloader --ignore-platform-reqs
+
+FROM node:22-alpine AS assets
+
+WORKDIR /app
+
 COPY package*.json vite.config.js ./
-RUN npm install
-COPY resources/ ./resources/
-COPY public/ ./public/
-# Build assets (hasilnya akan ada di public/build)
-RUN npm run build
+COPY --from=php-deps /app/vendor ./vendor
+COPY resources ./resources
+COPY public ./public
 
-# --- Stage 2: PHP Setup ---
-FROM php:8.2-fpm
+RUN npm ci && npm run build
 
-# Install dependencies sistem
-RUN apt-get update && apt-get install -y \
-    git \
+FROM php:8.2-fpm-alpine
+
+RUN apk add --no-cache \
+    bash \
     curl \
+    freetype-dev \
+    git \
+    icu-dev \
+    libjpeg-turbo-dev \
     libpng-dev \
-    libonig-dev \
+    libwebp-dev \
     libxml2-dev \
-    zip \
+    libzip-dev \
+    oniguruma-dev \
+    postgresql-dev \
+    sqlite-dev \
     unzip \
-    libsqlite3-dev
+    zip \
+  && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+  && docker-php-ext-install \
+    bcmath \
+    exif \
+    gd \
+    intl \
+    mbstring \
+    pcntl \
+    pdo_mysql \
+    pdo_pgsql \
+    pdo_sqlite \
+    zip
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Install PHP extensions yang dibutuhkan Laravel
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
-
-# Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Set working directory
 WORKDIR /var/www
 
-# Copy seluruh file project
-COPY . /var/www
+COPY . .
+COPY --from=assets /app/public/build ./public/build
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+COPY docker/entrypoint.sh /usr/local/bin/skc-entrypoint
 
-# Copy hasil build frontend dari Stage 1
-COPY --from=frontend /app/public/build /var/www/public/build
-
-# Install dependency PHP (tanpa dev dependencies untuk prod)
-RUN composer install --optimize-autoloader --no-dev
-
-# Permission (PENTING untuk SQLite)
-# Kita set owner ke www-data agar Nginx/PHP bisa tulis ke database.sqlite
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/database
+RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader \
+  && mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+  && cp -a public /var/www-public \
+  && chown -R www-data:www-data storage bootstrap/cache database \
+  && chmod -R ug+rwX storage bootstrap/cache database \
+  && chmod +x /usr/local/bin/skc-entrypoint
 
 EXPOSE 9000
+
+ENTRYPOINT ["skc-entrypoint"]
 CMD ["php-fpm"]
