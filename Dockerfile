@@ -10,7 +10,7 @@ FROM node:22-alpine AS assets
 
 WORKDIR /app
 
-COPY package*.json vite.config.js ./
+COPY package*.json vite.config.js tailwind.config.js postcss.config.js ./
 COPY --from=php-deps /app/vendor ./vendor
 COPY resources ./resources
 COPY public ./public
