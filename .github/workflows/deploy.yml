@@ -7,7 +7,7 @@ on:
 env:
   REGISTRY: ghcr.io
   # PENTING: Pakai huruf kecil semua secara manual
-  IMAGE_NAME: bagus-devlab/skc-revisi
+  IMAGE_NAME: bagus-devlab/skilconnect
 
 jobs:
   build-and-push:

@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/bagus-devlab/skc-revisi:latest
+    image: ghcr.io/bagus-devlab/skilconnect:latest
     container_name: skc-app
     restart: unless-stopped
     volumes:
